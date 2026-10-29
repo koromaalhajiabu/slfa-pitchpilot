@@ -1,0 +1,792 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#007229">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="PitchPilot">
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="icon" href="./icon-192.png" type="image/png">
+  <link rel="apple-touch-icon" href="./icon-192.png">
+  <title>PitchPilot - Ultimate Pro Tactical Board</title>
+
+  <!-- React & ReactDOM CDNs -->
+  <script crossorigin src="https://unpkg.com/react@18.3.1/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js"></script>
+
+  <!-- Framer Motion CDN -->
+  <script crossorigin src="https://unpkg.com/framer-motion@11.11.9/dist/framer-motion.js"></script>
+
+  <!-- Babel Standalone -->
+  <script crossorigin src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html { min-height: 100%; }
+    body { background: radial-gradient(circle at center, #090d16 0%, #020617 100%); color: #f8fafc; font-family: system-ui, -apple-system, sans-serif; min-height: 100vh; min-height: 100dvh; overflow-x: hidden; overflow-y: auto; }
+
+    .app-container { display: flex; flex-direction: column; min-height: 100vh; min-height: 100dvh; }
+    @media (min-width: 1280px) {
+      body { height: 100vh; overflow: hidden; }
+      .app-container { flex-direction: row; height: 100vh; min-height: 0; }
+    }
+
+    .pitch-area { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; padding: 8.5rem 0.75rem 1.25rem; position: relative; user-select: none; }
+    @media (min-width: 1280px) {
+      .pitch-area { min-height: 0; justify-content: center; padding: 7.5rem 1rem 1rem; overflow: auto; }
+    }
+
+    .control-bar { position: absolute; top: 1rem; z-index: 20; display: flex; flex-wrap: wrap; gap: 0.35rem; background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(12px); padding: 0.45rem 0.7rem; border-radius: 1rem; border: 1px solid rgba(51, 65, 85, 0.6); box-shadow: 0 20px 40px -15px rgba(0,0,0,0.7); align-items: center; font-size: 0.7rem; }
+
+    .control-group { display: flex; align-items: center; gap: 0.2rem; }
+    .control-group label { color: #94a3b8; font-weight: 500; }
+
+    select, input, textarea { background: #090d16; border: 1px solid #334155; border-radius: 0.4rem; padding: 0.25rem 0.4rem; color: #fff; font-size: 0.7rem; outline: none; cursor: pointer; transition: border-color 0.2s; }
+    select:focus, input:focus, textarea:focus { border-color: #00ff66; box-shadow: 0 0 0 2px rgba(0,255,102,0.15); }
+
+    .btn { padding: 0.25rem 0.55rem; border-radius: 0.4rem; font-weight: 600; border: none; cursor: pointer; transition: all 0.2s; font-size: 0.7rem; }
+    .btn-slate { background: #1e293b; color: #cbd5e1; border: 1px solid rgba(255,255,255,0.05); }
+    .btn-slate:hover { background: #334155; color: #fff; }
+    .btn-slfa { background: linear-gradient(135deg, #007229 0%, #005a20 100%); color: #fff; }
+    .btn-slfa:hover { filter: brightness(1.1); }
+    .btn-slfa:disabled, .btn-blue:disabled { opacity: 0.4; cursor: not-allowed; }
+    .btn-blue { background: linear-gradient(135deg, #004d9d 0%, #003875 100%); color: #fff; }
+    .btn-blue:hover { filter: brightness(1.1); }
+    .btn-purple { background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%); color: #fff; }
+    .btn-purple:hover { filter: brightness(1.1); }
+    .btn-amber { background: linear-gradient(135deg, #d97706 0%, #b45309 100%); color: #fff; }
+    .btn-amber:hover { filter: brightness(1.1); }
+    .btn-red-pulse { background: #dc2626; color: #fff; animation: pulse 2s infinite; }
+    .btn-text { background: none; border: none; color: #94a3b8; cursor: pointer; font-size: 0.65rem; }
+    .btn-text:hover { color: #f87171; }
+
+    .divider { width: 1px; height: 1rem; background: #334155; margin: 0 0.1rem; }
+
+    /* Match Clock Ticker */
+    .match-clock { position: absolute; top: 4.6rem; z-index: 20; background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(12px); padding: 0.2rem 0.6rem; border-radius: 0.6rem; border: 1px solid rgba(51, 65, 85, 0.6); font-size: 0.7rem; display: flex; align-items: center; gap: 0.4rem; box-shadow: 0 10px 20px -5px rgba(0,0,0,0.5); }
+
+    /* Pitch Styles with Flexibility Support */
+    .pitch { display: block; flex: 0 0 auto; width: min(100%, 36rem); height: auto; max-height: none; border-radius: 1rem; border: 3px solid; position: relative; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.8), 0 0 40px rgba(0, 114, 41, 0.15); overflow: hidden; margin: 0 auto 0.5rem; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 0.2); }
+
+    .pitch-vertical { aspect-ratio: 3/4; }
+    @media(min-width: 640px) { .pitch-vertical { aspect-ratio: 4/5; } }
+    @media (min-width: 1280px) {
+      .pitch-vertical { width: min(100%, calc((100vh - 9rem) * 0.8)); max-width: 36rem; }
+      .pitch-horizontal { width: min(100%, calc((100vh - 9rem) * 4 / 3)); }
+    }
+
+    .pitch-horizontal { aspect-ratio: 4/3; max-width: 44rem; }
+
+    /* Keep the complete board visible on small screens while allowing the page to scroll. */
+    @media (max-width: 639px) {
+      .pitch-area { padding-left: 0.6rem; padding-right: 0.6rem; }
+      .pitch { width: min(100%, 28rem); border-radius: 0.75rem; }
+      .pitch-vertical { aspect-ratio: 3 / 4; }
+      .pitch-horizontal { width: min(100%, 34rem); aspect-ratio: 4 / 3; }
+      .control-bar { left: 0.5rem; right: 0.5rem; justify-content: center; max-height: none; }
+      .match-clock { left: 50%; transform: translateX(-50%); white-space: nowrap; }
+    }
+
+    .pitch-classic { background-color: #007229; border-color: rgba(255, 255, 255, 0.7); }
+    .pitch-chalkboard { background-color: #0b1120; border-color: #334155; }
+    .pitch-halfpitch { background-color: #005a20; border-color: rgba(255, 255, 255, 0.7); }
+
+    .pitch-line-h { position: absolute; left: 0; right: 0; top: 50%; height: 2px; border-top: 2px solid; }
+    .pitch-classic .pitch-line-h, .pitch-halfpitch .pitch-line-h { border-color: rgba(255, 255, 255, 0.7); }
+    .pitch-chalkboard .pitch-line-h { border-color: #334155; }
+
+    .center-circle { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 6.5rem; height: 6.5rem; border-radius: 9999px; border: 2px solid; }
+    .pitch-classic .center-circle, .pitch-halfpitch .center-circle { border-color: rgba(255, 255, 255, 0.7); }
+    .pitch-chalkboard .center-circle { border-color: #334155; }
+
+    .center-dot { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 0.35rem; height: 0.35rem; border-radius: 9999px; }
+    .pitch-classic .center-dot { background-color: #ffffff; }
+    .pitch-chalkboard .center-dot { background-color: #334155; }
+    .pitch-halfpitch .center-dot { background-color: #ffffff; }
+
+    .penalty-box-top { position: absolute; top: 0; left: 50%; transform: translateX(-50%); width: 55%; height: 15%; border-bottom: 2px solid; border-left: 2px solid; border-right: 2px solid; }
+    .penalty-box-bottom { position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); width: 55%; height: 15%; border-top: 2px solid; border-left: 2px solid; border-right: 2px solid; }
+    .pitch-classic .penalty-box-top, .pitch-classic .penalty-box-bottom, .pitch-halfpitch .penalty-box-top, .pitch-halfpitch .penalty-box-bottom { border-color: rgba(255, 255, 255, 0.7); }
+    .pitch-chalkboard .penalty-box-top, .pitch-chalkboard .penalty-box-bottom { border-color: #334155; }
+
+    .pitch-drawing-layer { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 10; overflow: visible; }
+
+    /* Heatmap Overlay */
+    .heatmap-overlay { position: absolute; inset: 0; display: flex; flex-direction: column; pointer-events: none; z-index: 5; opacity: 0.25; }
+    .heatmap-third { flex: 1; border-bottom: 1px dashed rgba(255,255,255,0.5); }
+    .heatmap-third:nth-child(1) { background-color: rgba(239, 68, 68, 0.35); } 
+    .heatmap-third:nth-child(2) { background-color: rgba(234, 179, 8, 0.35); } 
+    .heatmap-third:nth-child(3) { background-color: rgba(34, 197, 94, 0.35); } 
+
+    /* Ball & Players */
+    .ball { position: absolute; transform: translate(-50%, -50%); width: 1.3rem; height: 1.3rem; background: #fff; border-radius: 9999px; box-shadow: 0 4px 8px rgba(0,0,0,0.4); border: 1px solid #94a3b8; display: flex; align-items: center; justify-content: center; cursor: grab; z-index: 30; }
+    .ball-inner { width: 0.35rem; height: 0.35rem; background: #0f172a; border-radius: 9999px; }
+
+    .player-node { position: absolute; transform: translate(-50%, -50%); display: flex; flex-direction: column; align-items: center; cursor: grab; z-index: 20; }
+    .player-badge { width: 2rem; height: 2rem; border-radius: 9999px; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 0.7rem; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.4); border: 2px solid #fff; color: #fff; background: linear-gradient(135deg, #004d9d 0%, #003875 100%); transition: transform 0.2s; }
+    .player-badge.opponent { background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%); }
+    .player-node:hover .player-badge { transform: scale(1.12); }
+    .player-badge.selected { background: linear-gradient(135deg, #00ff66 0%, #00cc52 100%); color: #020617; transform: scale(1.15); box-shadow: 0 0 0 4px rgba(0, 255, 102, 0.35); }
+
+    .player-label { background: rgba(2, 6, 23, 0.9); backdrop-filter: blur(4px); font-size: 0.5rem; padding: 0.05rem 0.3rem; border-radius: 0.25rem; margin-top: 0.1rem; color: #e2e8f0; font-weight: 500; white-space: nowrap; border: 1px solid rgba(51, 65, 85, 0.6); pointer-events: none; }
+
+    /* Sidebar */
+    .sidebar { width: 100%; background: rgba(15, 23, 42, 0.95); backdrop-filter: blur(12px); border-top: 1px solid rgba(51, 65, 85, 0.6); padding: 0.85rem; display: flex; flex-direction: column; justify-content: space-between; max-height: 100vh; overflow-y: auto; }
+    @media(min-width: 1280px) { .sidebar { width: 22rem; border-top: none; border-left: 1px solid rgba(51, 65, 85, 0.6); } }
+
+    .sidebar-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.5rem; }
+    .sidebar-header h2 { font-size: 0.95rem; font-weight: bold; letter-spacing: -0.01em; }
+    .pro-badge { color: #00ff66; font-size: 0.5rem; text-transform: uppercase; padding: 0.1rem 0.35rem; background: rgba(0, 255, 102, 0.12); border-radius: 9999px; border: 1px solid rgba(0, 255, 102, 0.25); margin-left: 0.3rem; font-weight: 700; }
+
+    .tactical-brief { background: rgba(2, 6, 23, 0.6); border-radius: 0.4rem; padding: 0.45rem; border: 1px solid #1e293b; margin-bottom: 0.5rem; }
+    .tactical-brief h3 { font-size: 0.7rem; font-weight: 600; color: #cbd5e1; margin-bottom: 0.1rem; }
+    .tactical-brief p { font-size: 0.6rem; color: #94a3b8; line-height: 1.25; }
+
+    .section-title { font-size: 0.6rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: #94a3b8; margin-bottom: 0.3rem; }
+
+    .bench-container { display: flex; gap: 0.3rem; flex-wrap: wrap; background: #020617; padding: 0.4rem; border-radius: 0.4rem; border: 1px solid #1e293b; margin-bottom: 0.5rem; min-height: 2.5rem; align-items: center; }
+    .bench-item { background: #1e293b; border: 1px solid #334155; padding: 0.15rem 0.35rem; border-radius: 0.3rem; font-size: 0.65rem; cursor: pointer; display: flex; align-items: center; gap: 0.2rem; transition: background 0.2s; }
+    .bench-item:hover { background: #007229; color: #fff; }
+
+    .editor-card { background: #020617; padding: 0.45rem; border-radius: 0.4rem; border: 1px solid #1e293b; display: flex; flex-direction: column; gap: 0.3rem; }
+    .editor-header { display: flex; align-items: center; justify-content: space-between; }
+    .editor-header span { font-size: 0.7rem; font-weight: bold; color: #00ff66; }
+
+    .input-group { display: flex; flex-direction: column; gap: 0.1rem; }
+    .input-group label { font-size: 0.6rem; color: #94a3b8; }
+    .input-group input, .input-group textarea { width: 100%; padding: 0.2rem 0.35rem; font-size: 0.7rem; background: #090d16; }
+
+    .empty-state { text-align: center; padding: 0.75rem 0.4rem; border: 1px dashed #1e293b; border-radius: 0.4rem; color: #64748b; font-size: 0.7rem; }
+    .footer-note {
+      margin-top: 1rem;
+      padding: 0.9rem 0.75rem;
+      border: 1px solid rgba(34, 197, 94, 0.28);
+      border-radius: 0.85rem;
+      background: linear-gradient(135deg, rgba(15, 23, 42, 0.96), rgba(6, 30, 24, 0.92));
+      text-align: center;
+      color: #94a3b8;
+      font-size: 0.62rem;
+      font-weight: 700;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.03);
+    }
+    .footer-note .brand-mark {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 1.6rem;
+      height: 1.6rem;
+      margin-bottom: 0.45rem;
+      border-radius: 0.5rem;
+      background: linear-gradient(135deg, #22c55e, #0f766e);
+      color: #02130a;
+      font-size: 0.8rem;
+      font-weight: 900;
+      letter-spacing: -0.04em;
+      box-shadow: 0 0 18px rgba(34,197,94,0.2);
+    }
+    .footer-note .credit-label { display: block; margin-bottom: 0.28rem; color: #64748b; font-size: 0.54rem; letter-spacing: 0.24em; }
+    .footer-note .credit-name { display: block; color: #e2e8f0; font-size: 0.8rem; font-weight: 800; letter-spacing: 0.04em; text-transform: none; }
+    .footer-note .credit-accent { color: #4ade80; }
+
+    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+  </style>
+</head>
+<body>
+
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState, useRef, useEffect } = React;
+    const { motion, AnimatePresence } = window.Motion;
+
+    const FORMATIONS = {
+      '4-3-3': [
+        { id: 1, name: 'GK', number: 1, role: 'Goalkeeper', x: 50, y: 88, onPitch: true },
+        { id: 2, name: 'RB', number: 2, role: 'Right Back', x: 82, y: 70, onPitch: true },
+        { id: 3, name: 'CB', number: 4, role: 'Center Back', x: 60, y: 75, onPitch: true },
+        { id: 4, name: 'CB', number: 5, role: 'Center Back', x: 40, y: 75, onPitch: true },
+        { id: 5, name: 'LB', number: 3, role: 'Left Back', x: 18, y: 70, onPitch: true },
+        { id: 6, name: 'CDM', number: 6, role: 'Defensive Midfield', x: 50, y: 55, onPitch: true },
+        { id: 7, name: 'CM', number: 8, role: 'Central Midfield', x: 68, y: 45, onPitch: true },
+        { id: 8, name: 'CM', number: 10, role: 'Central Midfield', x: 32, y: 45, onPitch: true },
+        { id: 9, name: 'RW', number: 7, role: 'Right Winger', x: 82, y: 22, onPitch: true },
+        { id: 10, name: 'ST', number: 9, role: 'Striker', x: 50, y: 15, onPitch: true },
+        { id: 11, name: 'LW', number: 11, role: 'Left Winger', x: 18, y: 22, onPitch: true },
+        { id: 12, name: 'Sub GK', number: 13, role: 'Goalkeeper', x: 50, y: 50, onPitch: false },
+        { id: 13, name: 'Sub DEF', number: 15, role: 'Defender', x: 50, y: 50, onPitch: false },
+        { id: 14, name: 'Sub MID', number: 16, role: 'Midfielder', x: 50, y: 50, onPitch: false },
+        { id: 15, name: 'Sub ATT', number: 18, role: 'Forward', x: 50, y: 50, onPitch: false },
+      ],
+      '4-4-2': [
+        { id: 1, name: 'GK', number: 1, role: 'Goalkeeper', x: 50, y: 88, onPitch: true },
+        { id: 2, name: 'RB', number: 2, role: 'Right Back', x: 82, y: 70, onPitch: true },
+        { id: 3, name: 'CB', number: 5, role: 'Center Back', x: 60, y: 75, onPitch: true },
+        { id: 4, name: 'CB', number: 4, role: 'Center Back', x: 40, y: 75, onPitch: true },
+        { id: 5, name: 'LB', number: 3, role: 'Left Back', x: 18, y: 70, onPitch: true },
+        { id: 6, name: 'RM', number: 7, role: 'Right Midfield', x: 82, y: 45, onPitch: true },
+        { id: 7, name: 'CM', number: 8, role: 'Central Midfield', x: 60, y: 48, onPitch: true },
+        { id: 8, name: 'CM', number: 6, role: 'Central Midfield', x: 40, y: 48, onPitch: true },
+        { id: 9, name: 'LM', number: 11, role: 'Left Midfield', x: 18, y: 45, onPitch: true },
+        { id: 10, name: 'ST', number: 9, role: 'Striker', x: 58, y: 20, onPitch: true },
+        { id: 11, name: 'ST', number: 10, role: 'Striker', x: 42, y: 20, onPitch: true },
+        { id: 12, name: 'Sub GK', number: 13, role: 'Goalkeeper', x: 50, y: 50, onPitch: false },
+        { id: 13, name: 'Sub DEF', number: 15, role: 'Defender', x: 50, y: 50, onPitch: false },
+      ],
+      '4-2-3-1': [
+        { id: 1, name: 'GK', number: 1, role: 'Goalkeeper', x: 50, y: 88, onPitch: true },
+        { id: 2, name: 'RB', number: 2, role: 'Right Back', x: 82, y: 70, onPitch: true },
+        { id: 3, name: 'CB', number: 5, role: 'Center Back', x: 60, y: 75, onPitch: true },
+        { id: 4, name: 'CB', number: 4, role: 'Center Back', x: 40, y: 75, onPitch: true },
+        { id: 5, name: 'LB', number: 3, role: 'Left Back', x: 18, y: 70, onPitch: true },
+        { id: 6, name: 'CDM', number: 6, role: 'Defensive Midfield', x: 60, y: 55, onPitch: true },
+        { id: 7, name: 'CDM', number: 8, role: 'Defensive Midfield', x: 40, y: 55, onPitch: true },
+        { id: 8, name: 'RAM', number: 7, role: 'Attacking Midfield', x: 78, y: 35, onPitch: true },
+        { id: 9, name: 'CAM', number: 10, role: 'Attacking Midfield', x: 50, y: 38, onPitch: true },
+        { id: 10, name: 'LAM', number: 11, role: 'Attacking Midfield', x: 22, y: 35, onPitch: true },
+        { id: 11, name: 'ST', number: 9, role: 'Striker', x: 50, y: 18, onPitch: true },
+        { id: 12, name: 'Sub GK', number: 13, role: 'Goalkeeper', x: 50, y: 50, onPitch: false },
+      ],
+      'Free Kick Routine': [
+        { id: 1, name: 'GK', number: 1, role: 'Goalkeeper', x: 50, y: 90, onPitch: true },
+        { id: 2, name: 'Wall 1', number: 5, role: 'Defender', x: 52, y: 32, onPitch: true },
+        { id: 3, name: 'Wall 2', number: 4, role: 'Defender', x: 47, y: 32, onPitch: true },
+        { id: 4, name: 'Wall 3', number: 6, role: 'Defender', x: 42, y: 32, onPitch: true },
+        { id: 5, name: 'Taker', number: 10, role: 'Midfielder', x: 50, y: 48, onPitch: true },
+        { id: 6, name: 'Decoy', number: 9, role: 'Striker', x: 45, y: 35, onPitch: true },
+        { id: 7, name: 'Sub', number: 12, role: 'Bench', x: 50, y: 50, onPitch: false }
+      ]
+    };
+
+    const OPPONENT_FORMATION = [
+      { id: 101, name: 'Opp GK', number: 1, role: 'Goalkeeper', x: 50, y: 12 },
+      { id: 102, name: 'Opp RB', number: 2, role: 'Right Back', x: 18, y: 30 },
+      { id: 103, name: 'Opp CB1', number: 4, role: 'Center Back', x: 40, y: 25 },
+      { id: 104, name: 'Opp CB2', number: 5, role: 'Center Back', x: 60, y: 25 },
+      { id: 105, name: 'Opp LB', number: 3, role: 'Left Back', x: 82, y: 30 },
+      { id: 106, name: 'Opp CM1', number: 6, role: 'Midfielder', x: 40, y: 42 },
+      { id: 107, name: 'Opp CM2', number: 8, role: 'Midfielder', x: 60, y: 42 },
+      { id: 108, name: 'Opp ST', number: 9, role: 'Striker', x: 50, y: 65 },
+    ];
+
+    const PITCH_STYLES = {
+      classic: { class: 'pitch-classic', name: 'SLFA Turf' },
+      chalkboard: { class: 'pitch-chalkboard', name: 'Dark Tactical' },
+      halfpitch: { class: 'pitch-halfpitch', name: 'Training Half-Pitch' }
+    };
+
+    function App() {
+      const [players, setPlayers] = useState(() => {
+        const saved = localStorage.getItem('pitchpilot_premium_players');
+        return saved ? JSON.parse(saved) : FORMATIONS['4-3-3'];
+      });
+      const [opponentPlayers, setOpponentPlayers] = useState(() => {
+        const saved = localStorage.getItem('pitchpilot_premium_opponent');
+        return saved ? JSON.parse(saved) : OPPONENT_FORMATION;
+      });
+      const [showOpponent, setShowOpponent] = useState(true);
+      const [showHeatmap, setShowHeatmap] = useState(false);
+      const [boardLayout, setBoardLayout] = useState('vertical'); // 'vertical' or 'horizontal'
+      const [ballPos, setBallPos] = useState({ x: 50, y: 50 });
+      const [selectedPlayer, setSelectedPlayer] = useState(null);
+      const [pitchStyle, setPitchStyle] = useState('classic');
+
+      const [matchTime, setMatchTime] = useState(0);
+      const [isClockRunning, setIsClockRunning] = useState(false);
+
+      const [isRecording, setIsRecording] = useState(false);
+      const [animationSteps, setAnimationSteps] = useState([]);
+      const [isPlaying, setIsPlaying] = useState(false);
+      const [frameNote, setFrameNote] = useState('');
+
+      const [lines, setLines] = useState([]);
+      const [isDrawing, setIsDrawing] = useState(false);
+      const [currentLine, setCurrentLine] = useState(null);
+
+      const pitchRef = useRef(null);
+
+      useEffect(() => {
+        localStorage.setItem('pitchpilot_premium_players', JSON.stringify(players));
+      }, [players]);
+
+      useEffect(() => {
+        localStorage.setItem('pitchpilot_premium_opponent', JSON.stringify(opponentPlayers));
+      }, [opponentPlayers]);
+
+      useEffect(() => {
+        let interval = null;
+        if (isClockRunning) {
+          interval = setInterval(() => {
+            setMatchTime(t => t + 1);
+          }, 1000);
+        } else {
+          clearInterval(interval);
+        }
+        return () => clearInterval(interval);
+      }, [isClockRunning]);
+
+      const formatTime = (secs) => {
+        const mins = Math.floor(secs / 60);
+        const remSecs = secs % 60;
+        return `${mins.toString().padStart(2, '0')}:${remSecs.toString().padStart(2, '0')}`;
+      };
+
+      const handlePresetChange = (name) => {
+        if (FORMATIONS[name]) {
+          setPlayers(FORMATIONS[name]);
+          setSelectedPlayer(null);
+        }
+      };
+
+      const handlePlayerDetailChange = (field, value) => {
+        if (!selectedPlayer) return;
+        const isOpp = selectedPlayer.id > 100;
+        if (isOpp) {
+          setOpponentPlayers(opponentPlayers.map(p => p.id === selectedPlayer.id ? { ...p, [field]: value } : p));
+        } else {
+          setPlayers(players.map(p => p.id === selectedPlayer.id ? { ...p, [field]: value } : p));
+        }
+        setSelectedPlayer({ ...selectedPlayer, [field]: value });
+      };
+
+      const togglePlayerPitchStatus = (id) => {
+        setPlayers(players.map(p => {
+          if (p.id === id) {
+            const nextStatus = !p.onPitch;
+            return { ...p, onPitch: nextStatus, x: nextStatus ? 50 : p.x, y: nextStatus ? 50 : p.y };
+          }
+          return p;
+        }));
+      };
+
+      const recordStep = () => {
+        const stepData = {
+          players: JSON.parse(JSON.stringify(players)),
+          opponent: JSON.parse(JSON.stringify(opponentPlayers)),
+          ball: { ...ballPos },
+          note: frameNote
+        };
+        setAnimationSteps([...animationSteps, stepData]);
+        setFrameNote('');
+      };
+
+      const playSequence = async () => {
+        if (animationSteps.length === 0) return;
+        setIsPlaying(true);
+        for (let step of animationSteps) {
+          setPlayers(step.players);
+          if (step.opponent) setOpponentPlayers(step.opponent);
+          setBallPos(step.ball);
+          if (step.note) setFrameNote(step.note);
+          await new Promise(r => setTimeout(r, 1000));
+        }
+        setIsPlaying(false);
+      };
+
+      const exportSnapshot = () => {
+        if (!pitchRef.current) return;
+        const node = pitchRef.current;
+        import('https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js').catch(() => {});
+        window.html2canvas ? window.html2canvas(node).then(canvas => {
+          const link = document.createElement('a');
+          link.download = 'pitchpilot_premium_snapshot.png';
+          link.href = canvas.toDataURL();
+          link.click();
+        }) : alert("Snapshot capture tool loading. Please try again in a moment.");
+      };
+
+      const exportTactics = () => {
+        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify({ players, opponentPlayers, lines, animationSteps }, null, 2));
+        const downloadAnchor = document.createElement('a');
+        downloadAnchor.setAttribute("href", dataStr);
+        downloadAnchor.setAttribute("download", "premium_tactics.json");
+        document.body.appendChild(downloadAnchor);
+        downloadAnchor.click();
+        downloadAnchor.remove();
+      };
+
+      const importTactics = (e) => {
+        const fileReader = new FileReader();
+        if (e.target.files[0]) {
+          fileReader.readAsText(e.target.files[0], "UTF-8");
+          fileReader.onload = (event) => {
+            try {
+              const parsed = JSON.parse(event.target.result);
+              if (parsed.players) setPlayers(parsed.players);
+              if (parsed.opponentPlayers) setOpponentPlayers(parsed.opponentPlayers);
+              if (parsed.lines) setLines(parsed.lines);
+              if (parsed.animationSteps) setAnimationSteps(parsed.animationSteps);
+              alert("Tactics imported successfully!");
+            } catch (err) {
+              alert("Invalid JSON configuration.");
+            }
+          };
+        }
+      };
+
+      const startDrawing = (e) => {
+        if (!isDrawing || !pitchRef.current) return;
+        const rect = pitchRef.current.getBoundingClientRect();
+        const x = ((e.clientX - rect.left) / rect.width) * 100;
+        const y = ((e.clientY - rect.top) / rect.height) * 100;
+        setCurrentLine({ x1: x, y1: y, x2: x, y2: y });
+      };
+
+      const drawMove = (e) => {
+        if (!isDrawing || !currentLine || !pitchRef.current) return;
+        const rect = pitchRef.current.getBoundingClientRect();
+        const x = ((e.clientX - rect.left) / rect.width) * 100;
+        const y = ((e.clientY - rect.top) / rect.height) * 100;
+        setCurrentLine({ ...currentLine, x2: x, y2: y });
+      };
+
+      const endDrawing = () => {
+        if (!isDrawing || !currentLine) return;
+        setLines([...lines, currentLine]);
+        setCurrentLine(null);
+      };
+
+      return (
+        <div className="app-container">
+
+          <div className="pitch-area">
+
+            <div className="match-clock">
+              <span style={{ color: '#00ff66', fontWeight: 'bold' }}>LIVE</span>
+              <span>⏱ {formatTime(matchTime)}</span>
+              <button onClick={() => setIsClockRunning(!isClockRunning)} className="btn btn-slate" style={{ padding: '0.1rem 0.3rem', fontSize: '0.6rem' }}>
+                {isClockRunning ? 'Pause' : 'Start'}
+              </button>
+              <button onClick={() => setMatchTime(0)} className="btn-text">Reset</button>
+            </div>
+
+            <div className="control-bar">
+              <div className="control-group">
+                <label>Preset:</label>
+                <select onChange={(e) => handlePresetChange(e.target.value)}>
+                  {Object.keys(FORMATIONS).map(f => (
+                    <option key={f} value={f}>{f}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="control-group">
+                <label>Pitch:</label>
+                <select value={pitchStyle} onChange={(e) => setPitchStyle(e.target.value)}>
+                  {Object.keys(PITCH_STYLES).map(s => (
+                    <option key={s} value={s}>{PITCH_STYLES[s].name}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="control-group">
+                <label>View:</label>
+                <select value={boardLayout} onChange={(e) => setBoardLayout(e.target.value)}>
+                  <option value="vertical">Full Pitch</option>
+                  <option value="horizontal">Wide View</option>
+                </select>
+              </div>
+
+              <button onClick={() => setShowOpponent(!showOpponent)} className={`btn ${showOpponent ? 'btn-slfa' : 'btn-slate'}`}>
+                {showOpponent ? 'Hide Opp' : 'Show Opp'}
+              </button>
+
+              <button onClick={() => setShowHeatmap(!showHeatmap)} className={`btn ${showHeatmap ? 'btn-amber' : 'btn-slate'}`}>
+                {showHeatmap ? 'Hide Zones' : 'Zones'}
+              </button>
+
+              <button onClick={() => setIsDrawing(!isDrawing)} className={`btn ${isDrawing ? 'btn-purple' : 'btn-slate'}`}>
+                {isDrawing ? 'Drawing' : 'Draw'}
+              </button>
+
+              <button onClick={exportSnapshot} className="btn btn-slate" title="Download PNG Snapshot">Snapshot</button>
+              <button onClick={exportTactics} className="btn btn-amber" title="Export JSON">Export</button>
+              <label className="btn btn-blue" style={{ cursor: 'pointer', display: 'inline-block' }}>
+                Import <input type="file" accept=".json" onChange={importTactics} style={{ display: 'none' }} />
+              </label>
+
+              <div className="divider" />
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                <button onClick={() => setIsRecording(!isRecording)} className={`btn ${isRecording ? 'btn-red-pulse' : 'btn-slate'}`}>
+                  {isRecording ? 'Rec...' : 'Record'}
+                </button>
+                <button onClick={recordStep} disabled={!isRecording} className="btn btn-slfa">
+                  Frm ({animationSteps.length})
+                </button>
+                <button onClick={playSequence} disabled={animationSteps.length === 0 || isPlaying} className="btn btn-blue">
+                  {isPlaying ? 'Playing...' : 'Play'}
+                </button>
+                <button onClick={() => { setAnimationSteps([]); setLines([]); }} className="btn-text">Clear</button>
+              </div>
+            </div>
+
+            <div 
+              ref={pitchRef} 
+              onMouseDown={startDrawing}
+              onMouseMove={drawMove}
+              onMouseUp={endDrawing}
+              className={`pitch ${boardLayout === 'horizontal' ? 'pitch-horizontal' : 'pitch-vertical'} ${PITCH_STYLES[pitchStyle].class}`}
+            >
+              <div className="pitch-line-h" />
+              <div className="center-circle" />
+              <div className="center-dot" />
+
+              <div className="penalty-box-top" />
+              <div className="penalty-box-bottom" />
+
+              {showHeatmap && (
+                <div className="heatmap-overlay">
+                  <div className="heatmap-third" title="Attacking Third" />
+                  <div className="heatmap-third" title="Middle Third" />
+                  <div className="heatmap-third" title="Defensive Third" />
+                </div>
+              )}
+
+              <svg className="pitch-drawing-layer" viewBox="0 0 100 100" preserveAspectRatio="none">
+                {lines.map((l, idx) => (
+                  <line key={idx} x1={`${l.x1}%`} y1={`${l.y1}%`} x2={`${l.x2}%`} y2={`${l.y2}%`} stroke="#00ff66" strokeWidth="3" strokeDasharray="5,5" />
+                ))}
+                {currentLine && (
+                  <line x1={`${currentLine.x1}%`} y1={`${currentLine.y1}%`} x2={`${currentLine.x2}%`} y2={`${currentLine.y2}%`} stroke="#00ff66" strokeWidth="3" strokeDasharray="5,5" />
+                )}
+              </svg>
+
+              <motion.div
+                drag={!isDrawing}
+                dragConstraints={pitchRef}
+                dragMomentum={false}
+                onDrag={(e, info) => {
+                  const rect = pitchRef.current.getBoundingClientRect();
+                  setBallPos({
+                    x: Math.max(5, Math.min(95, ((info.point.x - rect.left) / rect.width) * 100)),
+                    y: Math.max(5, Math.min(95, ((info.point.y - rect.top) / rect.height) * 100))
+                  });
+                }}
+                style={{ left: `${ballPos.x}%`, top: `${ballPos.y}%` }}
+                className="ball"
+              >
+                <div className="ball-inner" />
+              </motion.div>
+
+              {showOpponent && opponentPlayers.map((player) => (
+                <motion.div
+                  key={player.id}
+                  drag={!isDrawing}
+                  dragConstraints={pitchRef}
+                  dragMomentum={false}
+                  onDrag={(e, info) => {
+                    const rect = pitchRef.current.getBoundingClientRect();
+                    const newX = Math.max(5, Math.min(95, ((info.point.x - rect.left) / rect.width) * 100));
+                    const newY = Math.max(5, Math.min(95, ((info.point.y - rect.top) / rect.height) * 100));
+                    setOpponentPlayers(opponentPlayers.map(p => p.id === player.id ? { ...p, x: newX, y: newY } : p));
+                  }}
+                  onClick={() => setSelectedPlayer(player)}
+                  style={{ left: `${player.x}%`, top: `${player.y}%` }}
+                  className="player-node"
+                >
+                  <div className={`player-badge opponent ${selectedPlayer?.id === player.id ? 'selected' : ''}`}>
+                    {player.number}
+                  </div>
+                  <span className="player-label">{player.name}</span>
+                </motion.div>
+              ))}
+
+              {players.filter(p => p.onPitch).map((player) => (
+                <motion.div
+                  key={player.id}
+                  drag={!isDrawing}
+                  dragConstraints={pitchRef}
+                  dragMomentum={false}
+                  onDrag={(e, info) => {
+                    const rect = pitchRef.current.getBoundingClientRect();
+                    const newX = Math.max(5, Math.min(95, ((info.point.x - rect.left) / rect.width) * 100));
+                    const newY = Math.max(5, Math.min(95, ((info.point.y - rect.top) / rect.height) * 100));
+                    setPlayers(players.map(p => p.id === player.id ? { ...p, x: newX, y: newY } : p));
+                  }}
+                  onClick={() => setSelectedPlayer(player)}
+                  style={{ left: `${player.x}%`, top: `${player.y}%` }}
+                  className="player-node"
+                >
+                  <div className={`player-badge ${selectedPlayer?.id === player.id ? 'selected' : ''}`}>
+                    {player.number}
+                  </div>
+                  <span className="player-label">{player.name}</span>
+                </motion.div>
+              ))}
+            </div>
+          </div>
+
+          <div className="sidebar">
+            <div>
+              <div className="sidebar-header">
+                <h2>PitchPilot <span className="pro-badge">Ultimate Pro</span></h2>
+              </div>
+
+              <div className="tactical-brief">
+                <h3>Tactical Brief & Notes</h3>
+                <p>
+                  {frameNote ? <span style={{ color: '#00ff66' }}>Note: {frameNote}</span> : 'Switch board view modes, adjust zones, manage substitutes, and record animated drills.'}
+                </p>
+              </div>
+
+              {isRecording && (
+                <div className="input-group" style={{ marginBottom: '0.5rem' }}>
+                  <label>Frame Instruction / Note</label>
+                  <input 
+                    type="text" 
+                    placeholder="e.g. Quick overlap on the right flank" 
+                    value={frameNote}
+                    onChange={(e) => setFrameNote(e.target.value)}
+                  />
+                </div>
+              )}
+
+              <h3 className="section-title">Substitutes Bench (Click to Sub On/Off)</h3>
+              <div className="bench-container">
+                {players.filter(p => !p.onPitch).length > 0 ? (
+                  players.filter(p => !p.onPitch).map(sub => (
+                    <div key={sub.id} className="bench-item" onClick={() => togglePlayerPitchStatus(sub.id)}>
+                      <span style={{ fontWeight: 'bold' }}>#{sub.number}</span> {sub.name} 🟢
+                    </div>
+                  ))
+                ) : (
+                  <span style={{ fontSize: '0.65rem', color: '#64748b' }}>All squad players are currently on the pitch.</span>
+                )}
+              </div>
+
+              <h3 className="section-title">Player Customization</h3>
+
+              <AnimatePresence mode="wait">
+                {selectedPlayer ? (
+                  <motion.div 
+                    key={selectedPlayer.id}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -10 }}
+                    className="editor-card"
+                  >
+                    <div className="editor-header">
+                      <span>Editing #{selectedPlayer.number}</span>
+                      <div style={{ display: 'flex', gap: '0.3rem' }}>
+                        {selectedPlayer.id <= 100 && (
+                          <button onClick={() => togglePlayerPitchStatus(selectedPlayer.id)} className="btn-text" style={{ color: '#38bdf8' }}>
+                            {selectedPlayer.onPitch ? 'Move to Bench' : 'Sub On'}
+                          </button>
+                        )}
+                        <button onClick={() => setSelectedPlayer(null)} className="btn-text">Deselect</button>
+                      </div>
+                    </div>
+
+                    <div className="input-group">
+                      <label>Player Name</label>
+                      <input 
+                        type="text" 
+                        value={selectedPlayer.name}
+                        onChange={(e) => handlePlayerDetailChange('name', e.target.value)}
+                      />
+                    </div>
+
+                    <div className="input-group">
+                      <label>Shirt Number</label>
+                      <input 
+                        type="number" 
+                        value={selectedPlayer.number}
+                        onChange={(e) => handlePlayerDetailChange('number', Number(selectedPlayer.number))}
+                      />
+                    </div>
+
+                    <div className="input-group">
+                      <label>Role / Position</label>
+                      <input 
+                        type="text" 
+                        value={selectedPlayer.role}
+                        onChange={(e) => handlePlayerDetailChange('role', e.target.value)}
+                      />
+                    </div>
+                  </motion.div>
+                ) : (
+                  <div className="empty-state">
+                    Click any player on the pitch to customize their details or move them to the bench.
+                  </div>
+                )}
+              </AnimatePresence>
+            </div>
+
+            <footer className="footer-note" aria-label="Designer credit">
+              <span className="brand-mark">PP</span>
+              <span className="credit-label">PitchPilot · Ultimate Pro</span>
+              <span className="credit-name">Designed by <span className="credit-accent">"Alhaji Abu Koroma"</span></span>
+            </footer>
+          </div>
+        </div>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+  </script>
+
+  <!-- Install support: offline caching and "Install app" prompt -->
+  <style>#installBar[hidden],#installBtn[hidden]{display:none!important}</style>
+  <div id="installBar" hiddenstyle="position:fixed;right:12px;bottom:12px;z-index:50;display:flex;gap:8px;align-items:center;background:rgba(15,23,42,.92);border:1px solid rgba(0,255,102,.35);border-radius:.8rem;padding:.5rem .6rem;box-shadow:0 12px 30px rgba(0,0,0,.5);font:600 12px system-ui,sans-serif;color:#e2e8f0;">
+    <span id="installText">Install PitchPilot on your phone</span>
+    <button id="installBtn" type="button" style="border:0;border-radius:.5rem;padding:.4rem .7rem;font:700 12px system-ui,sans-serif;background:linear-gradient(135deg,#007229,#005a20);color:#fff;cursor:pointer;">Install</button>
+    <button id="installClose" type="button" aria-label="Dismiss" style="border:0;background:transparent;color:#94a3b8;font-size:16px;cursor:pointer;line-height:1;">&times;</button>
+  </div>
+  <script>
+    (function () {
+      if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
+        window.addEventListener('load', function () {
+          navigator.serviceWorker.register('./service-worker.js').catch(function (err) {
+            console.warn('Offline support registration failed:', err);
+          });
+        });
+      }
+
+      var bar = document.getElementById('installBar');
+      var text = document.getElementById('installText');
+      var btn = document.getElementById('installBtn');
+      var closeBtn = document.getElementById('installClose');
+      var standalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+      var dismissed = false;
+      try { dismissed = localStorage.getItem('pitchpilot_install_dismissed') === '1'; } catch (e) {}
+      var deferred = null;
+
+      function hide() { bar.hidden = true; }
+      closeBtn.addEventListener('click', function () {
+        try { localStorage.setItem('pitchpilot_install_dismissed', '1'); } catch (e) {}
+        hide();
+      });
+
+      window.addEventListener('beforeinstallprompt', function (e) {
+        e.preventDefault();
+        deferred = e;
+        if (!standalone && !dismissed) {
+          text.textContent = 'Install PitchPilot on your phone';
+          btn.hidden = false;
+          bar.hidden = false;
+        }
+      });
+
+      btn.addEventListener('click', function () {
+        if (!deferred) return;
+        deferred.prompt();
+        deferred.userChoice.finally(function () { deferred = null; hide(); });
+      });
+
+      window.addEventListener('appinstalled', hide);
+
+      // iPhone/iPad Safari has no install prompt, so show how to add it manually.
+      var isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+      if (isIOS && !standalone && !dismissed) {
+        text.textContent = 'To install: tap Share, then "Add to Home Screen"';
+        btn.hidden = true;
+        bar.hidden = false;
+      }
+    })();
+  </script>
+</body>
+</html>
